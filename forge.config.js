@@ -1,14 +1,14 @@
 module.exports = {
   packagerConfig: {
     asar: true,
-    icon: "images/league-of-legends.png",
+    icon: "images/lolVoiceLogo.jpg",
   },
   rebuildConfig: {},
   makers: [
     {
       name: "@electron-forge/maker-squirrel",
       config: {
-        // setupIcon: "images/league-of-legends.png",
+        loadingGif: "images/loading.gif",
       },
     },
     {

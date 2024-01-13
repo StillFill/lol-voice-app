@@ -6,6 +6,7 @@ const path = require("path");
 const appId = "6f47de0b99a04020974097b299acc5f3";
 let isQuiting = false;
 let win;
+// const urlToLoad = "http://localhost:3000/";
 const urlToLoad = "https://coral-app-4256a.ondigitalocean.app/";
 
 var AutoLaunch = require("auto-launch");
@@ -38,12 +39,14 @@ const startApplication = (activePlayer, allPlayers) => {
       minimizable: true,
       maximizable: false,
       fullscreenable: false,
+      resizable: false,
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false,
       },
     });
 
+    // win.webContents.openDevTools();
     win.setMenu(null);
 
     win.loadURL(urlToLoad);
