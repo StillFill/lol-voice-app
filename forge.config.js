@@ -1,14 +1,15 @@
 module.exports = {
   packagerConfig: {
     asar: true,
-    icon: "images/lolVoiceLogo.jpg",
+    icon: "resources/headset.png",
+    extraResource: ["./resources/headset.png"],
   },
   rebuildConfig: {},
   makers: [
     {
       name: "@electron-forge/maker-squirrel",
       config: {
-        loadingGif: "images/loading.gif",
+        loadingGif: "resources/loading.gif",
       },
     },
     {
@@ -17,7 +18,11 @@ module.exports = {
     },
     {
       name: "@electron-forge/maker-deb",
-      config: {},
+      config: {
+        options: {
+          icon: "resources/headset.png",
+        },
+      },
     },
     {
       name: "@electron-forge/maker-rpm",

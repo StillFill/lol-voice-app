@@ -1,4 +1,12 @@
-const { app, BrowserWindow, ipcMain, screen, Menu, Tray } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  ipcMain,
+  screen,
+  Menu,
+  Tray,
+  nativeImage,
+} = require("electron");
 const https = require("https");
 const { RtcTokenBuilder, RtcRole } = require("agora-access-token");
 const path = require("path");
@@ -40,6 +48,7 @@ const startApplication = (activePlayer, allPlayers) => {
       maximizable: false,
       fullscreenable: false,
       resizable: false,
+      icon: "resources/headset.png",
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false,
@@ -51,7 +60,13 @@ const startApplication = (activePlayer, allPlayers) => {
 
     win.loadURL(urlToLoad);
 
-    const tray = new Tray("C:/Users/msgre/league-of-legends.png");
+    // console.log(__dirname + "/../extraResources/");
+
+    // console.log(path.join(process.resourcePath, "extraResources", ""));
+    const configFile = path.join(path.dirname(__dirname), "headset.png");
+    console.log(configFile);
+
+    const tray = new Tray(configFile);
 
     tray.addListener("click", () => {
       win.show();
@@ -132,6 +147,7 @@ const startApplication = (activePlayer, allPlayers) => {
     minimizable: true,
     maximizable: true,
     fullscreenable: true,
+    icon: "resources/headset.png",
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,

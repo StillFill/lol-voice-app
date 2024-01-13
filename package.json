@@ -1,5 +1,6 @@
 {
   "name": "LolVoice",
+  "icon": "resources/headset.png",
   "version": "0.1.0",
   "author": {
     "name": "Mauricio Gregorio",
@@ -17,11 +18,20 @@
     "request": "^2.88.2"
   },
   "scripts": {
-    "electron": "electron .",
-    "electron:package": "electron-forge package",
-    "electron:make": "electron-forge make",
+    "start": "electron .",
     "package": "electron-forge package",
     "make": "electron-forge make"
+  },
+  "build": {
+    "extraResources": [
+      {
+        "from": "./resources/",
+        "to": "extraResources",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ]
   },
   "browserslist": {
     "production": [
