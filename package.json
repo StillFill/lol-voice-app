@@ -15,6 +15,7 @@
     "electron-squirrel-startup": "^1.0.0",
     "https": "^1.0.0",
     "https-browserify": "^1.0.0",
+    "league-connect": "^6.0.0-rc12",
     "request": "^2.88.2"
   },
   "scripts": {

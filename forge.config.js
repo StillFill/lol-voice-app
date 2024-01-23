@@ -10,6 +10,9 @@ module.exports = {
       name: "@electron-forge/maker-squirrel",
       config: {
         loadingGif: "resources/loading.gif",
+        icon: "resources/headset.ico",
+        setupIcon: "resources/headset.ico",
+        iconUrl: "https://coral-app-4256a.ondigitalocean.app/headset.jpg",
       },
     },
     {
@@ -26,13 +29,17 @@ module.exports = {
     },
     {
       name: "@electron-forge/maker-rpm",
-      config: {},
+      config: {
+        icon: "resources/headset.ico",
+      },
     },
   ],
   plugins: [
     {
       name: "@electron-forge/plugin-auto-unpack-natives",
-      config: {},
+      config: {
+        icon: "resources/headset.ico",
+      },
     },
   ],
 };

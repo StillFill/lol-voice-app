@@ -10,12 +10,18 @@ const {
 const https = require("https");
 const { RtcTokenBuilder, RtcRole } = require("agora-access-token");
 const path = require("path");
+const {
+  authenticate,
+  LeagueClient,
+  createHttp2Request,
+  createHttpSession,
+} = require("league-connect");
 
 const appId = "6f47de0b99a04020974097b299acc5f3";
 let isQuiting = false;
 let win;
-// const urlToLoad = "http://localhost:3000/";
-const urlToLoad = "https://coral-app-4256a.ondigitalocean.app/";
+const urlToLoad = "http://localhost:3000/";
+// const urlToLoad = "https://coral-app-4256a.ondigitalocean.app/";
 
 var AutoLaunch = require("auto-launch");
 var autoLauncher = new AutoLaunch({
@@ -34,37 +40,76 @@ autoLauncher
     throw err;
   });
 
-const startApplication = (activePlayer, allPlayers) => {
-  let loginSettings = app.getLoginItemSettings();
+const startHomeWindow = async () => {
+  try {
+    const credentials = await authenticate();
+    const session = await createHttpSession(credentials);
 
-  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
-
-  if (!activePlayer) {
-    win = new BrowserWindow({
-      // fullscreen: true,
-      height: 200,
-      width: 600,
-      minimizable: true,
-      maximizable: false,
-      fullscreenable: false,
-      resizable: false,
-      icon: "resources/headset.png",
-      webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: false,
+    const sessionResponse = await createHttp2Request(
+      {
+        method: "GET",
+        url: "/lol-summoner/v1/current-summoner",
       },
+      session,
+      credentials
+    );
+
+    const rankedResponse = await createHttp2Request(
+      {
+        method: "GET",
+        url: "/lol-ranked/v1/current-ranked-stats",
+      },
+      session,
+      credentials
+    );
+
+    const rankedStats = rankedResponse.json();
+    const userData = sessionResponse.json();
+
+    const gameData = {
+      type: "user-home",
+      userData: {
+        userRank: rankedStats.queueMap.RANKED_SOLO_5x5.tier,
+        userSummonnerName: userData.displayName,
+        userLevel: userData.summonerLevel,
+        userPercentForNextLevel: userData.percentCompleteForNextLevel,
+        profileIconId: userData.profileIconId,
+      },
+    };
+
+    console.log(gameData);
+
+    ipcMain.handle("get-game-data", async () => {
+      return gameData;
     });
+  } catch (err) {
+    ipcMain.handle("get-game-data", async () => {
+      return null;
+    });
+  }
 
-    // win.webContents.openDevTools();
-    win.setMenu(null);
+  win = new BrowserWindow({
+    // fullscreen: true,
+    height: 600,
+    width: 350,
+    minimizable: true,
+    maximizable: false,
+    fullscreenable: false,
+    resizable: false,
+    icon: "resources/headset.png",
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+  });
 
-    win.loadURL(urlToLoad);
+  // win.webContents.openDevTools();
+  win.setMenu(null);
 
-    // console.log(__dirname + "/../extraResources/");
+  win.loadURL(urlToLoad);
 
-    // console.log(path.join(process.resourcePath, "extraResources", ""));
+  try {
     const configFile = path.join(path.dirname(__dirname), "headset.png");
-    console.log(configFile);
 
     const tray = new Tray(configFile);
 
@@ -83,34 +128,31 @@ const startApplication = (activePlayer, allPlayers) => {
         },
       ])
     );
-
-    // if (!loginSettings.wasOpenedAtLogin) {
-    //   win.hide();
-    // }
-
-    win.on("minimize", function (event) {
-      event.preventDefault();
-      win.hide();
-    });
-
-    win.on("close", function (event) {
-      if (!isQuiting) {
-        event.preventDefault();
-        win.hide();
-      }
-
-      return false;
-    });
-
-    ipcMain.handle("get-game-data", async () => {
-      return null;
-    });
-
-    return;
+  } catch (err) {
+    console.error(err);
   }
 
-  console.log("ACTIVE PLAYER: ", activePlayer);
-  console.log("ALL PLAYERS: ", allPlayers);
+  // let loginSettings = app.getLoginItemSettings();
+  // if (!loginSettings.wasOpenedAtLogin) {
+  //   win.hide();
+  // }
+
+  win.on("minimize", function (event) {
+    event.preventDefault();
+    win.hide();
+  });
+
+  win.on("close", function (event) {
+    if (!isQuiting) {
+      event.preventDefault();
+      win.hide();
+    }
+
+    return false;
+  });
+};
+
+const startMatchWindow = (activePlayer, allPlayers) => {
   const userSummonnerName = activePlayer.summonerName.split("#")[0];
 
   const userOnList = allPlayers.find(
@@ -122,23 +164,23 @@ const startApplication = (activePlayer, allPlayers) => {
 
   const roomName = teamMates.reduce((a, b) => a + b.summonerName + ":", "");
 
-  console.log(roomName);
-
   const token = generateToken(appId, userSummonnerName, roomName);
-
   ipcMain.handle("get-game-data", async () => {
     return {
-      token,
-      roomName,
-      appId,
-      userSummonnerName,
+      type: "user-match",
+      userData: {
+        userSummonnerName,
+      },
+      agora: {
+        token,
+        roomName,
+        appId,
+      },
       players: teamMates,
     };
   });
 
-  console.log("TRAY");
-
-  console.log("WIN");
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
   win = new BrowserWindow({
     // fullscreen: true,
@@ -157,6 +199,15 @@ const startApplication = (activePlayer, allPlayers) => {
   win.setMenu(null);
 
   win.loadURL(urlToLoad);
+};
+
+const startApplication = (activePlayer, allPlayers) => {
+  if (!activePlayer) {
+    startHomeWindow();
+    return;
+  }
+
+  startMatchWindow(activePlayer, allPlayers);
 };
 
 const delay = (timeout) =>
@@ -191,8 +242,7 @@ const getGameData = () => {
       }
 
       const newStatus = isInMatch ? "match" : "waiting";
-      console.log("STATUS: ", status);
-      console.log("NEW STATUS: ", newStatus);
+
       if (status === newStatus) return;
 
       if (win) {
@@ -245,5 +295,16 @@ const generateToken = (appId, userSummonnerName, roomName) => {
     console.log("ERRRO TOKEN: ", err);
   }
 };
+
+app.setUserTasks([
+  {
+    program: process.execPath,
+    arguments: "--new-window",
+    iconPath: process.execPath,
+    iconIndex: 0,
+    title: "New Window",
+    description: "Create a new window",
+  },
+]);
 
 if (require("electron-squirrel-startup")) app.quit();
